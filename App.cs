@@ -22,35 +22,41 @@ namespace WardrobApp
             if (Regex.IsMatch($"{txtmonth.Text}-{txtday.Text}-{txtyear.Text}", 
                 @"^(0[1-9]|1[012])[- -.](0[1-9]|[12][0-9]|3[01])[- -.](19|20)+\d\d$"))
             {
-                var roupa = new Roupa()
+                try
                 {
-                    Id = Math.Abs(Guid.NewGuid().GetHashCode()),
-                    Tipo = clothestype.SelectedItem.ToString(),
-                    Estilo = txtclothestyle.Text,
-                    Tecido = typesoffabric.SelectedItem.ToString(),
-                    Cor = colorsset.SelectedItem.ToString(),
-                    Observacao = txtobsform.Text,
-                    DatadeUso = $"{txtyear.Text}-{txtmonth.Text}-{txtday.Text}",
-                };
-                var Url = "http://localhost:59603/WardrobeControl/postone";
-                var httpClient = new HttpClient();
-                var request = httpClient.PostAsync(Url,
-                    new StringContent(JsonConvert.SerializeObject(roupa),
-                    Encoding.UTF8, "application/json"));
-                request.Wait();
+                    var roupa = new Roupa()
+                    {
+                        Id = Math.Abs(Guid.NewGuid().GetHashCode()),
+                        Tipo = clothestype.SelectedItem.ToString() ?? throw new ArgumentNullException("Escolha um tipo"),
+                        Estilo = txtclothestyle.Text,
+                        Tecido = typesoffabric.SelectedItem.ToString() ?? throw new ArgumentNullException("Escolha um tipo de tecido"),
+                        Cor = colorsset.SelectedItem.ToString() ?? throw new ArgumentNullException("Escolha uma cor"),
+                        Observacao = txtobsform.Text,
+                        DatadeUso = $"{txtyear.Text}-{txtmonth.Text}-{txtday.Text}" ?? throw new ArgumentNullException("Insira uma data válida"),
+                    };
+                    var Url = "http://localhost:59603/WardrobeControl/postone";
+                    var httpClient = new HttpClient();
+                    var request = httpClient.PostAsync(Url,
+                        new StringContent(JsonConvert.SerializeObject(roupa),
+                        Encoding.UTF8, "application/json"));
+                    request.Wait();
 
-                var result = request.Result.Content.ReadAsStringAsync();
-                result.Wait();
-                if(result == null)
-                    txtlistofclothesform.Text = "Desculpa bonitinha, mas você não tem essa roupa!";
-                List<Roupa> minhalista = new List<Roupa>();
-                minhalista = JsonConvert.DeserializeObject<List<Roupa>>(result.Result);
-                txtlistofclothesform.Text = "";
-                minhalista.ForEach(s => {
-                    txtlistofclothesform.Text += s.Id + " " + s.Tipo + " " + s.Estilo + " "
-                    + s.Cor + " " + s.Tecido + " " + s.Observacao + " " +
-                    s.DatadeUso + Environment.NewLine;
-                });
+                    var result = request.Result.Content.ReadAsStringAsync();
+                    result.Wait();
+                    if(result == null)
+                        txtlistofclothesform.Text = "Desculpa bonitinha, mas você não tem essa roupa!";
+                    List<Roupa> minhalista = new List<Roupa>();
+                    minhalista = JsonConvert.DeserializeObject<List<Roupa>>(result.Result);
+                    txtlistofclothesform.Text = "";
+                    minhalista.ForEach(s => {
+                        txtlistofclothesform.Text += s.Id + " " + s.Tipo + " " + s.Estilo + " "
+                        + s.Cor + " " + s.Tecido + " " + s.Observacao + " " +
+                        s.DatadeUso + Environment.NewLine;
+                    });
+                }
+                catch (NullReferenceException) 
+                { txtlistofclothesform.Text ="Corrija aí bonitinha, algum campo está errado";}
+
             }
             else
               txtlistofclothesform.Text = "Corrija a data, escreva os campos na ordem:\n DIA MÊS e ANO";
@@ -101,23 +107,25 @@ namespace WardrobApp
                 });
             }
             else
-                txtlistofclothesform.Text += "Desculpe bonitinha, mas você não tem essa roupa!";
+                txtlistofclothesform.Text += "Desculpe bonitinha, mas você não tem essa roupa ou o tipo informado está incorreto!";
         }
 
         private void btnalteraform_Click(object sender, EventArgs e)
         {
+            int aux;
             if (Regex.IsMatch($"{txtmonth.Text}-{txtday.Text}-{txtyear.Text}",
-                @"^(0[1-9]|1[012])[- -.](0[1-9]|[12][0-9]|3[01])[- -.](19|20)+\d\d$"))
+                @"^(0[1-9]|1[012])[- -.](0[1-9]|[12][0-9]|3[01])[- -.](19|20)+\d\d$") &&
+                Int32.TryParse(txtiddaprocuradaform.Text, out aux))
             {
                 var roupa = new Roupa()
                 {
-                    Id = Int32.Parse(txtiddaprocuradaform.Text),
+                    Id = aux,
                     Tipo = null,
                     Estilo = null,
                     Tecido = null,
                     Cor = null,
                     Observacao = txtobsform.Text,
-                    DatadeUso = $"{txtyear.Text}-{txtmonth.Text}-{txtday.Text}",
+                    DatadeUso = $"{txtyear.Text}-{txtmonth.Text}-{txtday.Text}" ?? throw new ArgumentNullException("Insira uma data válida"),
                 };
                 var Url = "http://localhost:59603/WardrobeControl/changeinfoofone";
                 var httpClient = new HttpClient();
@@ -138,7 +146,7 @@ namespace WardrobApp
                     txtlistofclothesform.Text = "Desculpe bonitinha, mas você não tem essa roupa!";
             }
             else
-                txtlistofclothesform.Text = "Corrija a data, escreva os campos na ordem:\n DIA MÊS e ANO";
+                txtlistofclothesform.Text = "Desculpe bonitinha, verifique se escreveu o Id corretamente"+Environment.NewLine+"Ou corrija a data, escrevendo os campos na ordem:\n DIA MÊS e ANO";
 
         }
 
@@ -151,7 +159,7 @@ namespace WardrobApp
 
             var resultDelete = resultRequestDelete.Result.Content.ReadAsStringAsync();
             resultDelete.Wait();
-            txtlistofclothesform.Text = "Roupa removida do seu guarda-roupas!";
+            txtlistofclothesform.Text = (resultDelete.Result.Length==0)?"Id incorreto":"Roupa removida do seu guarda-roupas!";
         }
     }
 }
