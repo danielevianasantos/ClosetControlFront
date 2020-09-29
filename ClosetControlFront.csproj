@@ -7,10 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="9.2.2" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ClothesValidation\ClothesValidation.csproj" />
     <ProjectReference Include="..\ModelsandUtilities\ModelsandUtilities.csproj" />
   </ItemGroup>
 
